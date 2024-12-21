@@ -4,7 +4,7 @@ This project implements **ptychographic reconstruction** using **Implicit Neural
 
 ## **Project Structure**
 
-├── data/ # Input diffraction patterns
+├── data/ # Simulation data preparation
 
 ├── ptypy-master/ # PtyPy framework for ptychographic simulations
 
