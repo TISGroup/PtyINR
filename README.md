@@ -32,3 +32,11 @@ This project implements **ptychographic reconstruction** using **Implicit Neural
 2. Configure training parameters in Parameters.py.
 3. Run the reconstruction:   Python Main.py
 
+## **Dependencies**
+1. pip install -r requirements.txt
+
+## **License**
+This project is licensed under the MIT License.
+
+## **Usage**
+Inspired by advancements in ptychography and implicit neural representations. Thanks to SIREN and Tiny CUDA NN as well as Ptypy for their contributions.
