@@ -22,9 +22,13 @@ This project implements **ptychographic reconstruction** using **Implicit Neural
 
 ## **Installation**
 1. Clone the repository:
+
    git clone https://github.com/TISGroup/PtyINR.git
+   
    cd PtyINR
+   
 2. Set up a virtual environment and install dependencies
+
    pip install -r requirements.txt
 
 ## **Usage**
@@ -33,7 +37,17 @@ This project implements **ptychographic reconstruction** using **Implicit Neural
 3. Run the reconstruction:   Python Main.py
 
 ## **Dependencies**
-1. pip install -r requirements.txt
+This project relies on the following libraries:
+
+PyTorch: Deep learning framework.
+
+NumPy: Numerical computations.
+
+PtyPy: Ptychographic simulations.
+
+Tiny CUDA NN: Lightweight CUDA-accelerated neural networks.
+
+To install all dependencies: pip install -r requirements.txt
 
 ## **License**
 This project is licensed under the MIT License.
