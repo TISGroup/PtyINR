@@ -52,5 +52,5 @@ To install all dependencies: **pip install -r requirements.txt**
 ## **License**
 This project is licensed under the MIT License.
 
-## **Usage**
+## **Acknowledgements**
 Inspired by advancements in ptychography and implicit neural representations. Thanks to SIREN and Tiny CUDA NN as well as Ptypy for their contributions.
