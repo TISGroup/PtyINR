@@ -1,0 +1,12 @@
+/tiny-cuda-nn/build/CMakeFiles/tiny-cuda-nn.dir
+/tiny-cuda-nn/build/CMakeFiles/edit_cache.dir
+/tiny-cuda-nn/build/CMakeFiles/rebuild_cache.dir
+/tiny-cuda-nn/build/dependencies/fmt/CMakeFiles/fmt.dir
+/tiny-cuda-nn/build/dependencies/fmt/CMakeFiles/edit_cache.dir
+/tiny-cuda-nn/build/dependencies/fmt/CMakeFiles/rebuild_cache.dir
+/tiny-cuda-nn/build/samples/CMakeFiles/mlp_learning_an_image.dir
+/tiny-cuda-nn/build/samples/CMakeFiles/edit_cache.dir
+/tiny-cuda-nn/build/samples/CMakeFiles/rebuild_cache.dir
+/tiny-cuda-nn/build/benchmarks/image/CMakeFiles/bench_image_ours.dir
+/tiny-cuda-nn/build/benchmarks/image/CMakeFiles/edit_cache.dir
+/tiny-cuda-nn/build/benchmarks/image/CMakeFiles/rebuild_cache.dir

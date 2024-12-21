@@ -1,0 +1,1 @@
+-I"/tiny-cuda-nn/include" -I"/tiny-cuda-nn/dependencies" -I"/tiny-cuda-nn/dependencies/cutlass/include" -I"/tiny-cuda-nn/dependencies/cutlass/tools/util/include" -I"/tiny-cuda-nn/dependencies/fmt/include"
