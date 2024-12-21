@@ -43,7 +43,7 @@ PyTorch: Deep learning framework.
 
 NumPy: Numerical computations.
 
-PtyPy: Ptychographic simulations.
+PtyPy: Ptychographic iterative algorithms.
 
 Tiny CUDA NN: Lightweight CUDA-accelerated neural networks.
 
