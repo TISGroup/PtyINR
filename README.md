@@ -1,6 +1,6 @@
 # Ptychography Using Implicit Neural Representation (INR)
 
-This project implements **ptychographic reconstruction** using **Implicit Neural Representations (INRs)**, with two neural networks representing the object and probe functions. It reconstructs the object's amplitude and phase from diffraction patterns.
+This project implements **ptychographic reconstruction** using **Implicit Neural Representations (INRs)**, with two neural networks representing the object and probe functions. It reconstructs the experiment object and probe directly from diffraction patterns.
 
 ## **Project Structure**
 
@@ -23,13 +23,13 @@ This project implements **ptychographic reconstruction** using **Implicit Neural
 ## **Installation**
 1. Clone the repository:
 
-   git clone https://github.com/TISGroup/PtyINR.git
+   **git clone https://github.com/TISGroup/PtyINR.git**
    
-   cd PtyINR
+   **cd PtyINR**
    
 2. Set up a virtual environment and install dependencies
 
-   pip install -r requirements.txt
+   **pip install -r requirements.txt**
 
 ## **Usage**
 1. Place your diffraction patterns in the data/ folder.
@@ -47,7 +47,7 @@ PtyPy: Ptychographic simulations.
 
 Tiny CUDA NN: Lightweight CUDA-accelerated neural networks.
 
-To install all dependencies: pip install -r requirements.txt
+To install all dependencies: **pip install -r requirements.txt**
 
 ## **License**
 This project is licensed under the MIT License.
