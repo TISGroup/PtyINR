@@ -1,4 +1,4 @@
-# Ptychography Using Implicit Neural Representation (INR)
+# Learning neural representation for X-ray ptychography reconstruction with unknown probes
 
 This project implements **ptychographic reconstruction** using **Implicit Neural Representations (INRs)**, with two neural networks representing the object and probe functions. It reconstructs the experiment object and probe directly from diffraction patterns.
 
