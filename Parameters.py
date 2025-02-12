@@ -21,7 +21,7 @@ parameters["path_to_data"]= "temp/temp3.h5"
 parameters["path_to_data_make"]= "temp/temp4.h5"
 ### Probe
 parameters["probe_known"]=False
-parameters["path_to_probe"]="result/3104_ePIE_probe.npy"
+parameters["path_to_probe"]="data/probe_for_sim.npy"
 probe=np.load(parameters["path_to_probe"])
 probe=torch.tensor(probe)
 if parameters["mode"]=="simulated":   #extract the middle 64*64
