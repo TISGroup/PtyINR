@@ -9,7 +9,7 @@
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/your-username/PtyINR.git
+   git clone https://github.com/TISGroup/PtyINR.git
    cd PtyINR
 2. **Install the dependencies**:
 
@@ -22,18 +22,18 @@
    pip install .
 
 ## Dependencies
-numpy
-scipy
-torchmetrics
-h5py
-scikit-image
-matplotlib
-pytorch_msssim
-scikit-learn
-torchsummary
-commentjson
-gdown
-tiny-cuda-nn
+numpy  
+scipy  
+torchmetrics  
+h5py  
+scikit-image  
+matplotlib  
+pytorch_msssim  
+scikit-learn  
+torchsummary  
+commentjson  
+gdown  
+tiny-cuda-nn  
 
 ## Repository Structure
 PtyINR/
