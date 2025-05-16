@@ -52,7 +52,7 @@ parameters["batches"]=3600
 parameters["total_steps"] = 3000   # total training steos
 
 
-##########################################################   Do not modify from here, below are for setting parameters    #########################################
+##########################################################   Do not modify from here, below are for setting physical parameters    #########################################
 if parameters["mode"]=="simulated":
     parameters["amp_shift"]=False
 else:
