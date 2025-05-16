@@ -1,6 +1,6 @@
 # PtyINR: Ptychographic Implicit Neural Representation
 
-**PtyINR** is a deep learning framework for joint reconstruction of complex-valued **objects** and **illumination probes** in X-ray ptychography. It leverages **implicit neural representations** and **physics-informed optimization** to enable high-quality reconstructions under challenging conditions such as **low-dose measurements**, **noisy data**, and **limited overlap**. This repository provides the main scripts, utilities, and interactive notebooks to run PtyINR on both **simulated** and **real experimental datasets**.
+**PtyINR** is a deep learning framework for joint reconstruction of complex-valued **objects** and **illumination probes** in X-ray ptychography. It leverages **implicit neural representations** and **physics-informed optimization** to enable high-quality reconstructions under challenging conditions such as **limited scan overlap** and **short exposure time**. This repository provides the main scripts, utilities, and interactive notebooks to run PtyINR on both **simulated** and **real experimental datasets**.
 
 ---
 
@@ -20,6 +20,16 @@
    ```bash
    cd tiny-cuda-nn/bindings/torch
    pip install .
+
+## Usage
+1. **Input data preparation**
+2. **Ptychographic reconstruction**
+3. **Results evaluation**
+
+## Notes for tuning hyper-parameters
+1. **Object neural networks**
+2. **Probe neural netowkrs**
+3. **Loss function**
 
 ## Dependencies
 numpy  
@@ -58,10 +68,10 @@ tiny-cuda-nn
 
 We gratefully acknowledge the contributions of the following open-source projects, which have significantly inspired and supported the development of this work:
 
-- [**Instant Neural Graphics Primitives with a Multiresolution Hash Encoding**](https://github.com/NVlabs/instant-ngp): For its exceptional performance and efficiency, which we adapted for implementing our probe neural networks.
+- [**Instant Neural Graphics Primitives with a Multiresolution Hash Encoding**](https://github.com/NVlabs/instant-ngp)
 
-- [**Implicit Neural Representations with Periodic Activation Functions (SIREN)**](https://vsitzmann.github.io/siren/): For its powerful and expressive periodic activation functions, which we leveraged for modeling object neural networks.
+- [**Implicit Neural Representations with Periodic Activation Functions (SIREN)**](https://vsitzmann.github.io/siren/)
 
-- [**Ptypy: A Computational Framework for Ptychographic Reconstructions**](https://github.com/ptycho/ptypy/tree/master): For providing a state-of-the-art and extensible Python package for ptychographic data analysis and reconstruction.
+- [**Ptypy**](https://github.com/ptycho/ptypy/tree/master)
 
-Their contributions to the machine learning and computational imaging communities have been invaluable in the development of PtyINR.
+Their contributions to the deep learning and computational imaging communities have been invaluable in the development of PtyINR.
