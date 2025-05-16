@@ -51,9 +51,9 @@ tiny-cuda-nn
    ├── Metrics4Simulated_object.ipynb         # Object metrics  
    ├── Metrics4Simulated_probe.ipynb          # Probe metrics  
    ├── requirements.txt               # Python dependencies  
-   ├── README.md  
+   ├── README.md
 
----
+```
 ## Acknowledgements
 
 We gratefully acknowledge the contributions of the following open-source projects, which have significantly inspired and supported the development of this work:
