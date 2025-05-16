@@ -36,17 +36,17 @@ gdown
 tiny-cuda-nn  
 
 ## Repository Structure
-PtyINR/
-├── data/                          # Input datasets
-├── result/                        # Output reconstructions
-├── tiny-cuda-nn/                  # Neural field backend
-├── utils/                         # Utility functions
-├── Main.py                        # Main training/testing script
-├── Parameters.py                  # Parameter configurations
-├── config_hash.json               # JSON config file
-├── interactive_rec_real_data.ipynb        # Notebook for real data
-├── interactive_rec_simulated_data.ipynb   # Notebook for simulated data
-├── Metrics4Simulated_object.ipynb         # Object metrics
-├── Metrics4Simulated_probe.ipynb          # Probe metrics
-├── requirements.txt               # Python dependencies
-└── README.md                      # Project documentation
+PtyINR/  
+├── data/                          # Input datasets  
+├── result/                        # Output reconstructions  
+├── tiny-cuda-nn/                  # Neural field backend  
+├── utils/                         # Utility functions  
+├── Main.py                        # Main training/testing script  
+├── Parameters.py                  # Parameter configurations  
+├── config_hash.json               # JSON config file  
+├── interactive_rec_real_data.ipynb        # Notebook for real data  
+├── interactive_rec_simulated_data.ipynb   # Notebook for simulated data  
+├── Metrics4Simulated_object.ipynb         # Object metrics  
+├── Metrics4Simulated_probe.ipynb          # Probe metrics  
+├── requirements.txt               # Python dependencies  
+└── README.md                      # Project documentation  
