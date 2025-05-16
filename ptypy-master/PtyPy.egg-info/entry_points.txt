@@ -1,8 +1,0 @@
-[console_scripts]
-ptypy.cli = ptypy.cli.command_line_interface:ptypy_run
-ptypy.csv2cp = ptypy.cli.default_params:ptypy_csv2cp
-ptypy.inspect = ptypy.cli.inspect:ptypy_inspect
-ptypy.new = ptypy.cli.new_param_tree:ptypy_new
-ptypy.plot = ptypy.cli.plotter:ptypy_plot
-ptypy.plotclient = ptypy.cli.plotclient:ptypy_plotclient
-ptypy.run = ptypy.cli.run_script:ptypy_run

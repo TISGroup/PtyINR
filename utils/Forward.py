@@ -148,9 +148,3 @@ def forward(object_p,probe):
     exit_wave2=torch.mul(object_p,probe)
     w = post_fft * 1/parameters["shape_size"] * torch.fft.fft2(pre_fft * exit_wave2)
     return torch.abs(w)
-
-def in_forward(object_p,probe,detector_phase,measured_amplitude):
-    w=torch.complex(measured_amplitude*torch.cos(detector_phase),measured_amplitude*torch.sin(detector_phase))
-    real_space_exit_wave=torch.fft.ifft2(w/post_fft*parameters["shape_size"])/pre_fft
-    inverse_object=torch.div(real_space_exit_wave[pad_number:-pad_number,pad_number:-pad_number],probe)
-    return inverse_object

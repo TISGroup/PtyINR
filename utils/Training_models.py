@@ -11,7 +11,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-import os
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
@@ -26,8 +25,6 @@ import time
 from torchsummary import summary
 import h5py, os
 import numpy as np
-import ptypy, os
-import ptypy.utils as u
 import numpy as np
 import scipy.constants as C
 import time
@@ -36,6 +33,30 @@ import commentjson as json
 from utils.Forward import *
 from utils.Deep_Models import *
 import tinycudann as tcnn
+from numpy import inf
+from torch.optim.lr_scheduler import CosineAnnealingLR
+
+
+class PtychographyDataset(Dataset):
+    def __init__(self, coordinates_x,coordinates_y, diffraction_patterns):
+        """
+        Args:
+            coordinates (numpy array): Shape (40401, 2) - input coordinates.
+            diffraction_patterns (numpy array): Shape (40401, 220, 220) - measured patterns.
+        """
+        self.coordinates_x = torch.tensor(coordinates_x, dtype=torch.int32)#.cuda()  # Convert coordinates to tensor
+        self.coordinates_y = torch.tensor(coordinates_y, dtype=torch.int32)#.cuda()
+        self.diffraction_patterns = torch.tensor(diffraction_patterns, dtype=torch.float32).cuda()  # Convert patterns to tensor
+
+    def __len__(self):
+        # Return the total number of samples
+        return len(self.coordinates_x)
+
+    def __getitem__(self, idx):
+        # Retrieve a single coordinate and corresponding diffraction pattern
+        return self.coordinates_x[idx],self.coordinates_y[idx], self.diffraction_patterns[idx]
+
+    
 def grid_return(resolution):
     H=resolution[0]
     W=resolution[1]
@@ -48,12 +69,17 @@ def grid_return(resolution):
     # Stack and reshape into (H * W, 2) where each row contains (x, y) coordinates
     coords_2d = torch.stack([x_coords, y_coords], dim=-1).view(-1, 2)
     return coords_2d
+
+
+
+
+
 def get_mgrid(sidelen, dim=2):
     '''Generates a flattened grid of (x,y,...) coordinates in a range of -1 to 1.
     sidelen: int
     dim: int'''
     tensors = tuple(dim * [torch.linspace(-1, 1, steps=sidelen)])
-    mgrid = torch.stack(torch.meshgrid(*tensors), dim=-1)
+    mgrid = torch.stack(torch.meshgrid(*tensors, indexing='ij'), dim=-1)
     mgrid = mgrid.reshape(-1, dim)
     return mgrid
 
@@ -72,8 +98,27 @@ def get_loss(parameters):
         print("using SmoothL1 loss for training!")
         return nn.SmoothL1Loss(beta=parameters["beta_for_smoothl1"])
 
-    
 
+
+def get_model(parameters,obj_size,config):
+    model_type=parameters["model_type"]
+    if model_type=="siren":
+        obj_net_amp=Siren(in_features=2, out_features=1, hidden_features=512, 
+                  hidden_layers=3, outermost_linear=True, first_omega_0=parameters["first_omega"], hidden_omega_0=30)
+        obj_net_phase=Siren(in_features=2, out_features=1, hidden_features=512, 
+                  hidden_layers=3, outermost_linear=True, first_omega_0=parameters["first_omega"], hidden_omega_0=30)
+        return 1,get_mgrid(obj_size),obj_net_amp,obj_net_phase
+    else:
+        print("Using ReLU for representing object instead of PtyINR default structure!")
+        obj_net_amp=tcnn.NetworkWithInputEncoding(n_input_dims=2, n_output_dims=1,
+                                                    encoding_config=config["encoding"], network_config=config["network"])
+        obj_net_phase=tcnn.NetworkWithInputEncoding(n_input_dims=2, n_output_dims=1,
+                                                    encoding_config=config["encoding"], network_config=config["network"])
+        return 1e4,grid_return([obj_size,obj_size]),obj_net_amp,obj_net_phase
+
+
+
+        
 def recenter_probe(probe):
 
     center=int(probe.shape[0]/2)
@@ -83,22 +128,20 @@ def recenter_probe(probe):
 
     return recentered_probe
 
-
-
-
-
-def train_Pty_INR(f,parameters,probe):
+def train_Pty_INR_SGD(f,parameters,probe):
     with open("config_hash.json") as l:
         config = json.load(l)           
     ratio=parameters["regularized_loss_weight"]
     regularized_steps=parameters["regularized_steps"]
-    show_every=parameters["show_every"]
+    show_every=parameters["show_every"]  
     if parameters["amp_shift"]==False:
         actual_amp=f['diffamp'][()]
-    else:
-        actual_amp=np.fft.fftshift(f['diffamp'][()],axes=(-2,-1))
+    else:        
+        actual_amp=f['diffamp'][()]
+        actual_amp=np.fft.fftshift(actual_amp,axes=(-2,-1))
+    
 
-    actual_amp=torch.tensor(actual_amp).to(parameters["device"])
+    
     actual_amp=actual_amp/parameters["diffraction_scale"]
     frames_count=actual_amp.shape[0]
     scan_size=int(np.sqrt(f['points'][()].shape[1]))
@@ -113,23 +156,24 @@ def train_Pty_INR(f,parameters,probe):
             x_axis[i,j]=round((x_coord[i,j]-x_coord[0,0])/pixel_size)
             y_axis[i,j]=round((y_coord[i,j]-y_coord[0,0])/pixel_size)
 
-    x_axis=x_axis-x_axis.min()
-    y_axis=y_axis-y_axis.min()
+    x_axis=(x_axis-x_axis.min()).reshape(-1)
+    y_axis=(y_axis-y_axis.min()).reshape(-1)
     a=x_axis.max()
     b=y_axis.max()
     obj_size=int(max(a,b))+actual_amp.shape[1]
-
+    
+    print("The shape for diffraction patterns are ",actual_amp.shape)
+    dataset = PtychographyDataset(x_axis,y_axis,actual_amp)
+    dataloader = DataLoader(dataset, batch_size=parameters["batches"], shuffle=True, num_workers=0)
 
     criterion = get_loss(parameters)
     total_steps=parameters["total_steps"]
     min_loss = float('inf')
-    obj_net_amp=Siren(in_features=2, out_features=1, hidden_features=512, 
-                  hidden_layers=3, outermost_linear=True, first_omega_0=parameters["first_omega"], hidden_omega_0=30)
-    obj_net_phase=Siren(in_features=2, out_features=1, hidden_features=512, 
-                  hidden_layers=3, outermost_linear=True, first_omega_0=parameters["first_omega"], hidden_omega_0=30)
+    pred_scale,obj_grid,obj_net_amp,obj_net_phase=get_model(parameters,obj_size,config)
     obj_net_amp=obj_net_amp.cuda()
     obj_net_phase=obj_net_phase.cuda()
     obj_grid=get_mgrid(obj_size).cuda()
+    
     model_probe_amp = tcnn.NetworkWithInputEncoding(n_input_dims=2, n_output_dims=1,
                                                     encoding_config=config["encoding"], network_config=config["network"])
     model_probe_phase = tcnn.NetworkWithInputEncoding(n_input_dims=2, n_output_dims=1,
@@ -143,54 +187,204 @@ def train_Pty_INR(f,parameters,probe):
     optim2 = torch.optim.Adam(lr=parameters["LR2"], params=obj_net_phase.parameters())
     optim3 = torch.optim.Adam(lr=parameters["LR3"], params=model_probe_amp.parameters())
     optim4 = torch.optim.Adam(lr=parameters["LR4"], params=model_probe_phase.parameters())
-    total_batches=len(parameters["batches"])
-    batches=parameters["batches"]
     accumlated_loss=0
     imshow=parameters["image_show"]
+    probe_amp=torch.abs(probe)
+    total_batches=len(dataloader)
+    probe=probe.cuda()
+    
     start = time.time()
     for step in range(total_steps):
-        start_idx=0
         accumlated_loss=0
-        for idx in range(total_batches):
+        for batch_idx, (x_axis,y_axis, measured_patterns) in enumerate(dataloader):
             loss=0
-            predict_amp=obj_net_amp(obj_grid)
+            predict_amp=obj_net_amp(obj_grid)*pred_scale
             obj_amp=torch.abs(predict_amp).view(obj_size,obj_size)
-            obj_phase=obj_net_phase(obj_grid).view(obj_size,obj_size)
+            obj_phase=obj_net_phase(obj_grid).view(obj_size,obj_size)*pred_scale
             object_act=torch.complex(obj_amp*torch.cos(obj_phase),obj_amp*torch.sin(obj_phase))
-            
-            predict2=model_probe_amp(probe_grid)
-            probe_amp=torch.abs(predict2).view(probe_shape,probe_shape)*1e4
-            probe_phase=model_probe_phase(probe_grid).view(probe_shape,probe_shape)*1e4
-            probe=torch.complex(probe_amp*torch.cos(probe_phase),probe_amp*torch.sin(probe_phase))
-            probe=probe/(torch.abs(probe).max())
-            probe=recenter_probe(probe)
-            x_indices = x_axis.reshape(-1)[start_idx:start_idx+batches[idx]]  # Flatten x_axis
-            y_indices = y_axis.reshape(-1)[start_idx:start_idx+batches[idx]]  # Flatten y_axis
+
+            if parameters["probe_known"]==False:
+                predict2=model_probe_amp(probe_grid)
+                probe_amp=torch.abs(predict2).view(probe_shape,probe_shape)*1e4
+                probe_phase=model_probe_phase(probe_grid).view(probe_shape,probe_shape)*1e4
+                probe=torch.complex(probe_amp*torch.cos(probe_phase),probe_amp*torch.sin(probe_phase))
+                probe=probe/(torch.abs(probe).max())
+                probe=recenter_probe(probe)
+                
+
+            x_indices = x_axis
+            y_indices = y_axis
             x_limits = x_indices + probe.shape[0]
             y_limits = y_indices + probe.shape[1]
             
             # Extract all part_obj in a single batch operation
             batch_part_obj = torch.stack([
-                object_act[int(x):int(x_l), int(y):int(y_l)]
+                object_act[x.item():x_l.item(), y.item():y_l.item()]
                 for x, x_l, y, y_l in zip(x_indices, x_limits, y_indices, y_limits)
             ], dim=0)
             
             # Perform Fourier transforms in batch
             pre_amp_batch = forward(batch_part_obj, probe)
         
-            loss1 = criterion(pre_amp_batch, actual_amp[start_idx:start_idx+batches[idx]])
-            loss1=loss1*batches[idx]/frames_count
-            loss2 = torch.abs(probe).mean()/total_batches
-            if step>regularized_steps:
+            loss1 = criterion(pre_amp_batch, measured_patterns)
+            loss2 = torch.abs(probe).mean()
+            if step>=regularized_steps:
                 ratio=0
             loss= loss1+ratio*loss2
-            accumlated_loss+=loss.item()
-            start_idx=start_idx+batches[idx]
+            accumlated_loss+=loss.item()*len(batch_part_obj)/frames_count
             loss.backward()
+            optim.step()
+            optim2.step()
+            optim3.step()
+            optim4.step()
+            optim.zero_grad()
+            optim2.zero_grad()
+            optim3.zero_grad()
+            optim4.zero_grad()
+        
+        
+        if step % show_every==0:
+            if imshow==True:
+                print("Step %d, Total loss %0.6f" % (step, accumlated_loss))
+                fig, axes = plt.subplots(1,4, figsize=(18,6))
+                axes[0].imshow(torch.rot90(torch.abs(object_act),k=4).cpu().detach().numpy(),cmap="grey")
+                axes[1].imshow(torch.rot90(torch.angle(object_act),k=4).cpu().detach().numpy(),cmap="magma_r")
+                axes[2].imshow(torch.abs(probe).cpu().detach().numpy(),cmap="grey")
+                axes[3].imshow(torch.angle(probe).cpu().detach().numpy(),cmap="magma")
+                plt.show()
+            else:     
+                print("Step %d, Total loss %0.6f" % (step, accumlated_loss))
+                plt.imsave(parameters["save_path"]+"amp.jpg",obj_amp.detach().cpu().numpy(),cmap="grey")
+                plt.imsave(parameters["save_path"]+"phase.jpg",obj_phase.detach().cpu().numpy(),cmap="magma_r")
+                plt.imsave(parameters["save_path"]+"probe_amp.jpg",torch.abs(probe).detach().cpu().numpy(),cmap="grey")
+                plt.imsave(parameters["save_path"]+"probe_phase.jpg",torch.angle(probe).detach().cpu().numpy(),cmap="magma")
     
 
+    
+        if accumlated_loss < min_loss:
+            min_loss = accumlated_loss
+            best_obj = object_act
+            best_probe = probe
+            np.save(parameters["save_path"]+parameters["tag"]+"_obj"+".npy",best_obj.cpu().detach().numpy())
+            np.save(parameters["save_path"]+parameters["tag"]+"_probe"+".npy",best_probe.cpu().detach().numpy())
 
+
+            
+    end = time.time()
+    print("running time is ",end - start,"s")
+    best_obj=best_obj.cpu().detach().numpy()
+    best_probe=best_probe.cpu().detach().numpy()
+    np.save(parameters["save_path"]+parameters["tag"]+"_obj"+".npy",best_obj)
+    np.save(parameters["save_path"]+parameters["tag"]+"_probe"+".npy",best_probe)
+
+
+
+def train_Pty_INR_GD(f,parameters,probe):
+    with open("config_hash.json") as l:
+        config = json.load(l)           
+    ratio=parameters["regularized_loss_weight"]
+    regularized_steps=parameters["regularized_steps"]
+    show_every=parameters["show_every"]  
+    if parameters["amp_shift"]==False:
+        actual_amp=f['diffamp'][()]
+    else:        
+        actual_amp=f['diffamp'][()]
+        actual_amp=np.fft.fftshift(actual_amp,axes=(-2,-1))
+    
+
+    
+    actual_amp=actual_amp/parameters["diffraction_scale"]
+    frames_count=actual_amp.shape[0]
+    scan_size=int(np.sqrt(f['points'][()].shape[1]))
+    pixel_size=parameters["pixel_size"]
+    x_axis=np.empty([scan_size, scan_size])
+    y_axis=np.empty([scan_size, scan_size])
+    
+    x_coord=f['points'][()][0].reshape(scan_size,scan_size)
+    y_coord=f['points'][()][1].reshape(scan_size,scan_size)
+    for i in range(scan_size):
+        for j in range(scan_size):
+            x_axis[i,j]=round((x_coord[i,j]-x_coord[0,0])/pixel_size)
+            y_axis[i,j]=round((y_coord[i,j]-y_coord[0,0])/pixel_size)
+
+    x_axis=(x_axis-x_axis.min()).reshape(-1)
+    y_axis=(y_axis-y_axis.min()).reshape(-1)
+    a=x_axis.max()
+    b=y_axis.max()
+    obj_size=int(max(a,b))+actual_amp.shape[1]
+    
+    print("The shape for diffraction patterns are ",actual_amp.shape)
+    dataset = PtychographyDataset(x_axis,y_axis,actual_amp)
+    dataloader = DataLoader(dataset, batch_size=parameters["batches"], shuffle=True, num_workers=0)
+
+    criterion = get_loss(parameters)
+    total_steps=parameters["total_steps"]
+    min_loss = float('inf')
+    pred_scale,obj_grid,obj_net_amp,obj_net_phase=get_model(parameters,obj_size,config)
+    obj_net_amp=obj_net_amp.cuda()
+    obj_net_phase=obj_net_phase.cuda()
+    obj_grid=get_mgrid(obj_size).cuda()
+    
+    model_probe_amp = tcnn.NetworkWithInputEncoding(n_input_dims=2, n_output_dims=1,
+                                                    encoding_config=config["encoding"], network_config=config["network"])
+    model_probe_phase = tcnn.NetworkWithInputEncoding(n_input_dims=2, n_output_dims=1,
+                                                      encoding_config=config["encoding"], network_config=config["network"])
+    
+    model_probe_amp=model_probe_amp.cuda()
+    model_probe_phase=model_probe_phase.cuda()
+    probe_grid=grid_return([actual_amp.shape[1],actual_amp.shape[1]]).cuda()
+    probe_shape=actual_amp.shape[1]
+    optim = torch.optim.Adam(lr=parameters["LR"], params=obj_net_amp.parameters())
+    optim2 = torch.optim.Adam(lr=parameters["LR2"], params=obj_net_phase.parameters())
+    optim3 = torch.optim.Adam(lr=parameters["LR3"], params=model_probe_amp.parameters())
+    optim4 = torch.optim.Adam(lr=parameters["LR4"], params=model_probe_phase.parameters())
+    accumlated_loss=0
+    imshow=parameters["image_show"]
+    probe_amp=torch.abs(probe)
+    total_batches=len(dataloader)
+    probe=probe.cuda()
+    
+    start = time.time()
+    for step in range(total_steps):
+        accumlated_loss=0
+        for batch_idx, (x_axis,y_axis, measured_patterns) in enumerate(dataloader):
+            loss=0
+            predict_amp=obj_net_amp(obj_grid)*pred_scale
+            obj_amp=torch.abs(predict_amp).view(obj_size,obj_size)
+            obj_phase=obj_net_phase(obj_grid).view(obj_size,obj_size)*pred_scale
+            object_act=torch.complex(obj_amp*torch.cos(obj_phase),obj_amp*torch.sin(obj_phase))
+
+            if parameters["probe_known"]==False:
+                predict2=model_probe_amp(probe_grid)
+                probe_amp=torch.abs(predict2).view(probe_shape,probe_shape)*1e4
+                probe_phase=model_probe_phase(probe_grid).view(probe_shape,probe_shape)*1e4
+                probe=torch.complex(probe_amp*torch.cos(probe_phase),probe_amp*torch.sin(probe_phase))
+                probe=probe/(torch.abs(probe).max())
+                probe=recenter_probe(probe)
+                
+
+            x_indices = x_axis
+            y_indices = y_axis
+            x_limits = x_indices + probe.shape[0]
+            y_limits = y_indices + probe.shape[1]
+            
+            # Extract all part_obj in a single batch operation
+            batch_part_obj = torch.stack([
+                object_act[x.item():x_l.item(), y.item():y_l.item()]
+                for x, x_l, y, y_l in zip(x_indices, x_limits, y_indices, y_limits)
+            ], dim=0)
+            
+            # Perform Fourier transforms in batch
+            pre_amp_batch = forward(batch_part_obj, probe)
         
+            loss1 = criterion(pre_amp_batch, measured_patterns)
+            loss1=loss1*len(batch_part_obj)/frames_count
+            loss2 = torch.abs(probe).mean()/total_batches
+            if step>=regularized_steps:
+                ratio=0
+            loss= loss1+ratio*loss2
+            accumlated_loss+=loss.item()*len(batch_part_obj)/frames_count
+            loss.backward()
         optim.step()
         optim2.step()
         optim3.step()
@@ -199,31 +393,35 @@ def train_Pty_INR(f,parameters,probe):
         optim2.zero_grad()
         optim3.zero_grad()
         optim4.zero_grad()
-
         
         
         if step % show_every==0:
             if imshow==True:
                 print("Step %d, Total loss %0.6f" % (step, accumlated_loss))
                 fig, axes = plt.subplots(1,4, figsize=(18,6))
-                axes[0].imshow(torch.rot90(torch.abs(object_act),k=3)[60:-80,60:-80].cpu().detach().numpy())
-                axes[1].imshow(torch.rot90(torch.angle(object_act),k=3)[60:-80,60:-80].cpu().detach().numpy())
-                axes[2].imshow(torch.abs(probe).cpu().detach().numpy())
-                axes[3].imshow(torch.rot90(torch.angle(object_act)[260:-220,120:160],k=3).cpu().detach().numpy())
+                axes[0].imshow(torch.rot90(torch.abs(object_act),k=4).cpu().detach().numpy(),cmap="grey")
+                axes[1].imshow(torch.rot90(torch.angle(object_act),k=4).cpu().detach().numpy(),cmap="magma_r")
+                axes[2].imshow(torch.abs(probe).cpu().detach().numpy(),cmap="grey")
+                axes[3].imshow(torch.angle(probe).cpu().detach().numpy(),cmap="magma")
                 plt.show()
             else:     
                 print("Step %d, Total loss %0.6f" % (step, accumlated_loss))
-                plt.imsave(parameters["save_path"]+"amp.jpg",obj_amp.detach().cpu().numpy())
-                plt.imsave(parameters["save_path"]+"phase.jpg",obj_phase.detach().cpu().numpy())
-                plt.imsave(parameters["save_path"]+"probe_amp.jpg",torch.abs(probe).detach().cpu().numpy())
-                plt.imsave(parameters["save_path"]+"probe_phase.jpg",torch.angle(probe).detach().cpu().numpy())
+                plt.imsave(parameters["save_path"]+"amp.jpg",obj_amp.detach().cpu().numpy(),cmap="grey")
+                plt.imsave(parameters["save_path"]+"phase.jpg",obj_phase.detach().cpu().numpy(),cmap="magma_r")
+                plt.imsave(parameters["save_path"]+"probe_amp.jpg",torch.abs(probe).detach().cpu().numpy(),cmap="grey")
+                plt.imsave(parameters["save_path"]+"probe_phase.jpg",torch.angle(probe).detach().cpu().numpy(),cmap="magma")
     
 
-        
+    
         if accumlated_loss < min_loss:
             min_loss = accumlated_loss
             best_obj = object_act
             best_probe = probe
+            np.save(parameters["save_path"]+parameters["tag"]+"_obj"+".npy",best_obj.cpu().detach().numpy())
+            np.save(parameters["save_path"]+parameters["tag"]+"_probe"+".npy",best_probe.cpu().detach().numpy())
+
+
+            
     end = time.time()
     print("running time is ",end - start,"s")
     best_obj=best_obj.cpu().detach().numpy()
@@ -234,180 +432,15 @@ def train_Pty_INR(f,parameters,probe):
 
 
     
-def train_Iterative(f,parameters,probe,method):
     
     
     
-    yarr = f['points'][1]
-    xarr = f['points'][0]
-    if parameters["mode"]=="simulated":
-        diff = f['diffamp'][:]**2
+    
+    
+def train_model(parameters,f,probe):
+    if parameters["train_method"] == "mini_batch":
+        print("Using batch optimization")
+        train_Pty_INR_SGD(f,parameters,probe)
     else:
-        diff = np.fft.fftshift(f['diffamp'][:]**2, axes=[-2,-1])
-    z_m=f['z_m'][()]
-    ccd_pixel_um=f['ccd_pixel_um'][()]
-    path_to_data_xy=parameters["path_to_data_make"]
-    
-
-    probe_model=probe.cpu().numpy()       # for known probe conditions
-    
-    with h5py.File(path_to_data_xy,'w') as f1:
-        posy_um = f1.create_dataset("posy_um", data=yarr)
-        posx_um = f1.create_dataset("posx_um", data=xarr)
-        diffinten = f1.create_dataset("diffinten", data=diff)
-        z_m_2=f1.create_dataset("z_m", data=z_m)
-        ccd_pixel_um_2=f1.create_dataset("ccd_pixel_um", data=ccd_pixel_um)
-        
-    
-    
-    ptypy.load_ptyscan_module("hdf5_loader")
-
-    ptypy.load_gpu_engines(arch="cupy")
-
-    p = u.Param()
-
-    # Set verbose level to interactive
-    p.verbose_level = "interactive"
-
-    # Set io settings (no files saved)
-    p.io = u.Param()
-    p.io.autosave = u.Param(active=True)
-    p.io.interaction = u.Param(active=True)
-    # Path to final .ptyr output file 
-    # using variables p.run, engine name and total nr. of iterations
-    p.io.rfile =  "recons/%(run)s_%(engine)s_%(iterations)04d.ptyr"
-
-    # Use non-threaded live plotting
-    p.io.autoplot = u.Param()
-    p.io.autoplot.active=True
-    p.io.autoplot.threaded = False
-    p.io.autoplot.layout = "jupyter"
-    p.io.autoplot.interval = 1
-    p.io.autoplot.make_movie = True
-    # Save intermediate .ptyr files (dumps) every 10 iterations
-    p.io.autosave = u.Param()
-    p.io.autosave.active = False
-
-    # Live-plotting during the reconstruction
-    p.io.autoplot = u.Param()
-    p.io.autoplot.active=True
-    p.io.autoplot.threaded = False
-    p.io.autoplot.layout = "jupyter"
-    p.io.autoplot.interval = 1
-
-    # Define the scan model
-    p.scans = u.Param()
-    p.scans.scan_00 = u.Param()
-    p.scans.scan_00.name = 'Full'
-
-    # Initial illumination (based on simulated optics)
-    p.scans.scan_00.illumination = u.Param()
-    if parameters["probe_known"]==True:
-        if parameters["mode"]=="simulated":
-            probe=np.load("data/recon_203104_t1_mode_probe.npy")
-            p.scans.scan_00.illumination.model = probe[1][24:-24,24:-24]
-            print("no filling of code!")
-        else:
-            probe=np.load("data/recon_203104_t1_mode_probe.npy")
-            p.scans.scan_00.illumination.model = probe[0]
-    else:
-        p.scans.scan_00.illumination.aperture = u.Param()
-        p.scans.scan_00.illumination.aperture.form = parameters["probe_shape"]
-    
-    # Data loader
-    p.scans.scan_00.data = u.Param()
-    p.scans.scan_00.data.name = 'Hdf5Loader'
-
-    # Read diffraction data
-    p.scans.scan_00.data.intensities = u.Param()
-    p.scans.scan_00.data.intensities.file = path_to_data_xy
-    p.scans.scan_00.data.intensities.key = "diffinten"
-    # p.scans.scan_00.data.intensities.file = path_to_data
-    # p.scans.scan_00.data.intensities.key = "diffamp"
-
-    # Read positions data
-    p.scans.scan_00.data.positions = u.Param()
-    p.scans.scan_00.data.positions.file = path_to_data_xy
-    p.scans.scan_00.data.positions.slow_key = "posx_um"        # changed
-    p.scans.scan_00.data.positions.slow_multiplier = 1e-6
-    p.scans.scan_00.data.positions.fast_key = "posy_um"
-    p.scans.scan_00.data.positions.fast_multiplier = 1e-6
-
-    lambda_nm=f['lambda_nm'][()]*1e-9
-    energy = C.h*C.c/lambda_nm/C.eV/1e3
-    p.scans.scan_00.data.energy = energy
-
-    # Read meta data: detector distance ???
-    p.scans.scan_00.data.recorded_distance = u.Param()
-    p.scans.scan_00.data.recorded_distance.file = path_to_data_xy
-    p.scans.scan_00.data.recorded_distance.key = "z_m"
-    p.scans.scan_00.data.recorded_distance.multiplier = 1
-
-    # Read meta data: detector pixelsize
-    p.scans.scan_00.data.recorded_psize = u.Param()
-    p.scans.scan_00.data.recorded_psize.file = path_to_data_xy
-    p.scans.scan_00.data.recorded_psize.key = "ccd_pixel_um"
-    p.scans.scan_00.data.recorded_psize.multiplier = 1e-6
-
-    # Define reconstruction engine (using DM)
-    p.engines = u.Param()
-    p.engines.engine = u.Param()
-
-    
-    
-
-    if method =="ePIE":
-        p.engines.engine.name = "EPIE_cupy"
-        p.engines.engine.numiter = parameters["total_steps"]
-        p.engines.engine.numiter_contiguous = 1
-        p.engines.engine.alpha =parameters["a"]  
-        p.engines.engine.beta = parameters["b"]
-        p.engines.engine.numiter_contiguous = 1
-        p.engines.engine.object_norm_is_global = True
-        p.engines.engine.probe_center_tol=parameters["probe_center_tol"]
-        p.engines.engine.probe_update_start = parameters["probe_update_start"]
-    elif method == "RAAR":
-        p.engines.engine.fourier_relax_factor=0
-        p.engines.engine.subpix_start= parameters["total_steps"]+10
-        p.engines.engine.name = "RAAR_cupy"
-        p.engines.engine.numiter = parameters["total_steps"]  
-        p.engines.engine.numiter_contiguous = 10
-        p.engines.engine.beta = parameters["RAAR_beta"]
-        p.engines.engine.probe_support = None
-        p.engines.engine.probe_center_tol=parameters["probe_center_tol"]
-        p.engines.engine.probe_update_start =parameters["probe_update_start"] #parameters["total_steps"]+10
-        
-        
-    elif method == "DM":
-        p.engines.engine.fourier_relax_factor=parameters["fourier_relax_factor"]
-        p.engines.engine.subpix_start= parameters["total_steps"]+10
-        p.engines.engine.name = "DM_cupy"
-        p.engines.engine.numiter = parameters["total_steps"]  
-        p.engines.engine.numiter_contiguous = 1
-        p.engines.engine.alpha =parameters["DM_alpha"]
-        p.engines.engine.probe_support = None
-        p.engines.engine.probe_center_tol=parameters["probe_center_tol"]
-        p.engines.engine.probe_update_start =parameters["probe_update_start"]
-
-    start = time.time()
-    P = ptypy.core.Ptycho(p,level=5)
-    end = time.time()
-    print("running time is ",end - start,"s")
-    print(type(P.probe.S.values()))
-    S = list(P.obj.S.values())[0]
-    probe=list(P.probe.S.values())[0]
-    probe=probe.data[0].copy()
-    obj = S.data[0].copy()
-    np.save(parameters["save_path"]+parameters["tag"]+"_obj.npy",obj)
-    np.save(parameters["save_path"]+parameters["tag"]+"_probe.npy",probe)
-    
-    
-    
-    
-    
-    
-def train_model(parameters,f,probe,model_name="Pty_INR",trained=False):
-    if model_name=="Pty_INR":
-        train_Pty_INR(f,parameters,probe)
-    else:
-        train_Iterative(f,parameters,probe,model_name)
+        print("Using full data for optimization")
+        train_Pty_INR_GD(f,parameters,probe)
