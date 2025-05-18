@@ -22,16 +22,46 @@
    pip install .
 
 ## Usage
-1. **Input data preparation**
-   The input data should be in h5 file which contain the following headers.
-   1. **"diff_amp"**: diffraction patterns with 3 dimensions with order of: **total number of diffraction patterns x size of the diffraction pattern in X-axis x size of the diffraction pattern in y-axis** 
-3. **Ptychographic reconstruction**
-4. **Results evaluation**
 
-## Notes for tuning hyper-parameters
-1. **Object neural networks**
-2. **Probe neural netowkrs**
-3. **Loss function**
+### 1. Input Data Preparation
+
+Your input should be in an `.h5` file format containing the following datasets:
+
+| Header         | Description |
+|----------------|-------------|
+| **`diff_amp`** | 3D array of diffraction amplitudes, **without FFT shift**, with shape: `(N, H, W)`<br>— `N`: number of diffraction patterns<br>— `H`, `W`: height and width of each pattern |
+| **`points`**   | 2D array of scan positions with shape: `(2, N)`<br>— First row: x-coordinates<br>— Second row: y-coordinates<br>— Units: micrometers (µm) |
+| **`lambda_nm`**| Wavelength of the incoming X-ray (in nanometers) |
+| **`ccd_pixel_um`** | Pixel size of the detector (in micrometers) |
+| **`z_m`**      | Distance from the sample to the detector (in meters) |
+
+> Ensure that the data is collected (or simulated) in **transmission mode** of X-ray.  
+> For simulated data generation, refer to: `utils/Simulate_Data_Process.py`
+
+---
+
+### 2. Running Ptychographic Reconstruction
+
+PtyINR supports two workflows:
+
+#### a. Jupyter Notebooks (Recommended for Exploration & Visualization)
+
+- Configure parameters in `Parameters.py`
+- **`interactive_rec_simulated_data.ipynb`** — For simulated experiments  
+- **`interactive_rec_real_data.ipynb`** — For real experimental data
+
+#### b. Python Script (Recommended for Batch or Headless Runs)
+
+- Configure parameters in `Parameters.py`
+- Run the script from the terminal:
+
+```bash
+python Main.py
+```
+### 3. Results Evaluation (Simulated Data Only)
+
+- **`Metrics4Simulated_object.ipynb`** — Object reconstruction metrics  
+- **`Metrics4Simulated_probe.ipynb`** — Probe reconstruction metrics
 
 ## Dependencies
 numpy  
