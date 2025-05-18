@@ -23,8 +23,10 @@
 
 ## Usage
 1. **Input data preparation**
-2. **Ptychographic reconstruction**
-3. **Results evaluation**
+   The input data should be in h5 file which contain the following headers.
+   1. **"diff_amp"**: diffraction patterns with 3 dimensions with order of: **total number of diffraction patterns x size of the diffraction pattern in X-axis x size of the diffraction pattern in y-axis** 
+3. **Ptychographic reconstruction**
+4. **Results evaluation**
 
 ## Notes for tuning hyper-parameters
 1. **Object neural networks**
@@ -75,7 +77,7 @@ We gratefully acknowledge the contributions of the following open-source project
 
 - [**Instant Neural Graphics Primitives with a Multiresolution Hash Encoding**](https://github.com/NVlabs/instant-ngp)
 
-- [**Implicit Neural Representations with Periodic Activation Functions (SIREN)**](https://vsitzmann.github.io/siren/)
+- [**Implicit Neural Representations with Periodic Activation Functions (SIREN)**](https://github.com/vsitzmann/siren)
 
 - [**Ptypy**](https://github.com/ptycho/ptypy/tree/master)
 
