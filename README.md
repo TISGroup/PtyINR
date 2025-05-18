@@ -58,6 +58,11 @@ PtyINR supports two workflows:
 ```bash
 python Main.py
 ```
+
+> For guidance on how to tune PtyINR's hyperparameters (e.g., learning rates, loss weights), refer to: **`Notes for tuning hyperparameters.txt`**
+
+---
+
 ### 3. Results Evaluation (Simulated Data Only)
 
 - **`Metrics4Simulated_object.ipynb`** — Object reconstruction metrics  
