@@ -114,6 +114,8 @@ We gratefully acknowledge the contributions of the following open-source project
 
 - [**Implicit Neural Representations with Periodic Activation Functions (SIREN)**](https://github.com/vsitzmann/siren)
 
+- [**PtychoNN: Deep learning of ptychographic imaging**](https://github.com/mcherukara/PtychoNN/tree/master)
+
 - [**Ptypy**](https://github.com/ptycho/ptypy/tree/master)
 
 Their contributions to the deep learning and computational imaging communities have been invaluable in the development of PtyINR.
