@@ -116,6 +116,6 @@ We gratefully acknowledge the contributions of the following open-source project
 
 - [**PtychoNN: Deep learning of ptychographic imaging**](https://github.com/mcherukara/PtychoNN/tree/master)
 
-- [**Ptypy**](https://github.com/ptycho/ptypy/tree/master)
+- [**PtyPy - Ptychography Reconstruction for Python**](https://github.com/ptycho/ptypy/tree/master)
 
 Their contributions to the deep learning and computational imaging communities have been invaluable in the development of PtyINR.
