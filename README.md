@@ -66,21 +66,7 @@ python Main.py
 ### 3. Results Evaluation (Simulated Data Only)
 
 - **`Metrics4Simulated_object.ipynb`** — Object reconstruction metrics  
-- **`Metrics4Simulated_probe.ipynb`** — Probe reconstruction metrics
-
-## Dependencies
-numpy  
-scipy  
-torchmetrics  
-h5py  
-scikit-image  
-matplotlib  
-pytorch_msssim  
-scikit-learn  
-torchsummary  
-commentjson  
-gdown  
-tiny-cuda-nn  
+- **`Metrics4Simulated_probe.ipynb`** — Probe reconstruction metrics  
 
 ## Repository Structure
 
