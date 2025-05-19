@@ -18,7 +18,7 @@
 3. **Install the tiny-cuda-nn**:
 
    ```bash
-   cd tiny-cuda-nn/bindings/torch
+   cd utils/tiny-cuda-nn/bindings/torch
    pip install .
 
 ## Usage
@@ -74,17 +74,16 @@ python Main.py
 
    PtyINR/  
    ├── data/                          # Input datasets  
-   ├── doc/                           # Documentations on PtyINR
-   │   ├── notes for tuning hyperparameters.md             # Defines MLP-based architectures for neural representations  
+   ├── doc/                           # Documentations on PtyINR  
+   │   ├── notes_for_tuning_hyperparameters.md    # Guidance on how to tune the hyperparameters in PtyINR  
    ├── utils/                         # Utility functions  
-   │   ├── deep_models.py             # Defines MLP-based architectures for neural representations  
+   │   ├── deep_models.py             # Defines MLP-based architectures for object neural representations  
    │   ├── forward.py                 # Implements the forward ptychographic propagation model  
-   │   ├── simulate_data_process.py  # Tools for simulating ptychographic measurements  
-   │   ├── training_models.py        # Training loop and optimization utilities
+   │   ├── data_simulation_and_evaluation.py   # Tools for simulating ptychographic measurements and result evaluation
+   │   ├── training_models.py        # Training loop and optimization utilities  
    │   ├── tiny-cuda-nn/             # Our probe neural network backbone, modified to use float precision  
-   ├── main.py                        # Main script for training and evaluation  
+   ├── main.py                        # Main script for training  
    ├── parameters.py                  # Parameter configurations  
-   ├── config_hash.json               # JSON config file for probe neural networks  
    ├── requirements.txt               # Python dependencies  
    └── README.md                      
 
