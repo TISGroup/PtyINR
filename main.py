@@ -1,10 +1,10 @@
 import numpy as np
 import tinycudann as tcnn
-from utils.Deep_Models import *
-from Parameters import *
-from utils.Forward import *
-from utils.Simulate_Data_Process import*
-from utils.Training_models import *
+from utils.deep_models import *
+from parameters import *
+from utils.forward import *
+from utils.data_simulation_and_evaluation import*
+from utils.training_models import *
 import h5py
 import commentjson as json
 

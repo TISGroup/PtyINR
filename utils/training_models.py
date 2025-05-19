@@ -30,12 +30,29 @@ import scipy.constants as C
 import time
 from torchmetrics.image import PeakSignalNoiseRatio, TotalVariation
 import commentjson as json
-from utils.Forward import *
-from utils.Deep_Models import *
+from utils.forward import *
+from utils.deep_models import *
 import tinycudann as tcnn
 from numpy import inf
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
+config = {
+    "encoding": {
+        "otype": "HashGrid",
+        "n_levels": 16,
+        "n_features_per_level": 2,
+        "log2_hashmap_size": 15,
+        "base_resolution": 16,
+        "per_level_scale": 1.5
+    },
+    "network": {
+        "otype": "FullyFusedMLP",
+        "activation": "ReLU",
+        "output_activation": "None",
+        "n_neurons": 64,
+        "n_hidden_layers": 2
+    }
+}
 
 class PtychographyDataset(Dataset):
     def __init__(self, coordinates_x,coordinates_y, diffraction_patterns):
@@ -128,9 +145,7 @@ def recenter_probe(probe):
 
     return recentered_probe
 
-def train_Pty_INR_SGD(f,parameters,probe):
-    with open("config_hash.json") as l:
-        config = json.load(l)           
+def train_Pty_INR_SGD(f,parameters,probe):   
     ratio=parameters["regularized_loss_weight"]
     regularized_steps=parameters["regularized_steps"]
     show_every=parameters["show_every"]  

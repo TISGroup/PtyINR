@@ -17,14 +17,14 @@ from skimage.registration._phase_cross_correlation import _upsampled_dft
 from scipy.ndimage import fourier_shift
 from torchmetrics.image import PeakSignalNoiseRatio
 from pytorch_msssim import ms_ssim, ssim
-
+from skimage.metrics import structural_similarity as ssim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import os
 
 import time
 
-from Parameters import *
+from parameters import *
 
 
 def _confine(A):

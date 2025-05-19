@@ -17,16 +17,16 @@ from skimage.registration._phase_cross_correlation import _upsampled_dft
 from scipy.ndimage import fourier_shift
 from torchmetrics.image import PeakSignalNoiseRatio
 from pytorch_msssim import ms_ssim, ssim
-
+from skimage.metrics import structural_similarity as ssim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
 import os
 from torchvision import transforms
 import h5py
-from utils.Forward import *
+from utils.forward import *
 import io
 import time
-
+from math import log10, sqrt
 
 def get_step_size(overlap_ratio,probe_size):
     move_ratio=1-overlap_ratio
@@ -105,3 +105,85 @@ def diffraction_pattern_generate(amplitude_gt,phase_gt,overlap_ratio,probe,param
     f = h5py.File(buffer, 'r')
     
     return f
+
+
+def find_global_phase_shift_loop(A, B, num_steps=100000):
+    best_phi = 0
+    min_error = float('inf')
+
+    phase_range = np.linspace(-np.pi, np.pi, num_steps)
+
+    for phi in phase_range:
+        error =  np.mean((np.angle(A*np.exp(phi*1j))-B)**2) # Compute least squares error
+
+        if error < min_error:
+            min_error = error
+            best_phi = phi  # Update best phase shift
+
+    return best_phi
+
+
+def psnr_amp(original, compressed): 
+    mse = np.mean((original - compressed) ** 2) 
+    if(mse == 0):  # MSE is zero means no noise is present in the signal . 
+                  # Therefore PSNR have no importance. 
+        return 100
+    max_pixel = 1.0
+    psnr = 20 * log10(max_pixel / sqrt(mse)) 
+    return [psnr,ssim(original,compressed,data_range=1)]
+
+def psnr_phase(original, compressed): 
+    mse = np.mean((original - compressed) ** 2) 
+    if(mse == 0):  # MSE is zero means no noise is present in the signal . 
+                  # Therefore PSNR have no importance. 
+        return 100
+    max_pixel = np.pi
+    psnr = 20 * log10(max_pixel / sqrt(mse)) 
+    return [psnr,ssim(original,compressed,data_range=2*np.pi)]
+
+
+def recon_obj_evaluation(recon,ground_truth):
+    ground_truth=ground_truth[-241:,-241:]
+    ground_truth=ground_truth[30:-30,30:-30]
+    true_amp=np.abs(ground_truth)
+    true_phase=np.angle(ground_truth)
+    
+    recon = recon[:241, :241]
+    amp = np.abs(recon)[30:-30, 30:-30]
+    amp = amp * np.median(true_amp) / np.median(amp)
+    amp = amp.clip(max=1)
+    phase_shift = find_global_phase_shift_loop(recon[30:-30, 30:-30], true_phase)
+    phase = np.angle(recon * np.exp(phase_shift * 1j))[30:-30, 30:-30]
+    
+    # # Calculate PSNR metrics
+    psnr_amp_result = psnr_amp(amp, true_amp)
+    psnr_phase_result = psnr_phase(phase, true_phase)
+
+    # Extract PSNR values
+    psnr_amp_1 = round(psnr_amp_result[0], 2)
+    psnr_amp_2 = round(psnr_amp_result[1], 2)
+    psnr_phase_1 = round(psnr_phase_result[0], 2)
+    psnr_phase_2 = round(psnr_phase_result[1], 2)
+    print(f"Reconstructed object amplitude and phase in PSNR/SSIM: {psnr_amp_1}/{psnr_amp_2}  {psnr_phase_1}/{psnr_phase_2}")
+
+def recon_probe_evaluation(recon,ground_truth):
+    true_amp=np.abs(ground_truth)
+    true_amp=true_amp/true_amp.max()
+    true_phase=np.angle(ground_truth)
+    
+    amp = np.abs(recon)
+    amp=amp/amp.max()
+    amp = amp * np.median(true_amp) / np.median(amp)
+    phase_shift = find_global_phase_shift_loop(recon, true_phase)
+    phase = np.angle(recon * np.exp(phase_shift * 1j))
+    
+    # # Calculate PSNR metrics
+    psnr_amp_result = psnr_amp(amp, true_amp)
+    psnr_phase_result = psnr_phase(phase, true_phase)
+
+    # Extract PSNR values
+    psnr_amp_1 = round(psnr_amp_result[0], 2)
+    psnr_amp_2 = round(psnr_amp_result[1], 2)
+    psnr_phase_1 = round(psnr_phase_result[0], 2)
+    psnr_phase_2 = round(psnr_phase_result[1], 2)
+    print(f"Reconstructed probe amplitude and phase in PSNR/SSIM: {psnr_amp_1}/{psnr_amp_2}  {psnr_phase_1}/{psnr_phase_2}")

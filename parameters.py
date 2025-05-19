@@ -20,11 +20,10 @@ f['ccd_pixel_um']=np.float64(55.0)                                # the pixel si
 f['angle']=np.float64(-9.992007221626409*1e-15)                   # the angle of the incoming wave to the sample(rad)
 
 ### real data source file
-parameters["real_data_source"]="data/real_data.h5"     # current we only support h5 file as standard input with headers "lambda_nm", "z_m", "ccd_pixel_um", "angle", "diff_amp", ""
+parameters["real_data_source"]="data/real_data.h5"     # current we only support h5 file as standard input with headers "lambda_nm", "z_m", "ccd_pixel_um", "diff_amp", "points"
 
 ### result save directory
 parameters["save_path"] = "result/"
-
 
 ##########################################################   Model training parameters    #########################################
 
@@ -33,13 +32,13 @@ parameters["diffraction_scale"]=1200    # the diffraction pattern will be divide
 parameters["first_omega"]=30            # control the the extent of recovered details, raise this value if the data is sufficient and decrease if data is limited
 parameters["loss"]="SmoothL1"                 # use SmoothL1 by default. choose between "MSE" "SmoothL1" "L1"
 parameters["beta_for_smoothl1"]=1e-3        # control the extent the loss is more like MSE or L1, raise this value if you want to have better details but higher value will become more unstable
-parameters["LR"]=8e-5            # for object amplitude       
-parameters["LR2"]=8e-5         # for object phase 
+parameters["LR"]=6e-5            # for object amplitude       
+parameters["LR2"]=6e-5         # for object phase 
 parameters["LR3"]=5e-5           # for probe amplitude
 parameters["LR4"]=5e-5         # for probe phase
 parameters["device"]="cuda"    # by default, we use GPU for training
-parameters["regularized_loss_weight"]=2e-1        # to regularize the probe function at the begining of training, adjust it higher if the reconstructed probe diverged
-parameters["regularized_steps"]=20                # to control the training steps to regularize the probe, adjust it higher if the reconstructed probe diverged
+parameters["regularized_loss_weight"]=1e-1        # to regularize the probe function at the begining of training, adjust it higher if the reconstructed probe diverged
+parameters["regularized_steps"]=50                # to control the training steps to regularize the probe, adjust it higher if the reconstructed probe diverged
 parameters["show_every"]=50                       # the image will be showed every this step
 parameters["image_show"]=True                     # whether to display the current training images
 parameters["model_type"]="siren"                  # define the object neural network type, default is SIREN
@@ -47,9 +46,9 @@ parameters["tag"]="NA"         # the name to be saved for reconstructions
 
 
 ### for Pty_INR training strategy
-parameters["train_method"]="mini_batch"        
-parameters["batches"]=3600                        
-parameters["total_steps"] = 3000   # total training steos
+parameters["train_method"]="mini_batch"       # Select mini_batch for standard batch-wise optimization, or full_batch to perform optimization over the entire dataset (gradient accumulation)
+parameters["batches"]=3600                       # batch size 
+parameters["total_steps"] = 3000   # total training steps
 
 
 ##########################################################   Do not modify from here, below are for setting physical parameters    #########################################
@@ -74,6 +73,8 @@ if parameters["mode"]=="simulated":
 else:
     parameters["shape_size"]=f['diffamp'][()].shape[-1]
 
+if not os.path.isdir(parameters["save_path"]):
+    raise FileNotFoundError(f"Defined reconstruction save path does not exist! Please check again in parameters.py")
 
 parameters["pixel_size"]=f['lambda_nm'][()]*f['z_m'][()]/f['ccd_pixel_um'][()]/parameters["shape_size"]*1000
 parameters["c_sam"]="fftshift"
