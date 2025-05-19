@@ -74,20 +74,17 @@ python Main.py
 
    PtyINR/  
    ├── data/                          # Input datasets  
-   ├── result/                        # Output reconstructions  
-   ├── tiny-cuda-nn/                  # Our probe neural network backbone, modified to use float precision  
+   ├── doc/                           # Documentations on PtyINR
+   │   ├── notes for tuning hyperparameters.md             # Defines MLP-based architectures for neural representations  
    ├── utils/                         # Utility functions  
-   │   ├── Deep_Models.py             # Defines MLP-based architectures for neural representations  
-   │   ├── Forward.py                 # Implements the forward ptychographic propagation model  
-   │   ├── Simulate_Data_Process.py  # Tools for simulating ptychographic measurements  
-   │   ├── Training_models.py        # Training loop and optimization utilities  
-   ├── Main.py                        # Main script for training and evaluation  
-   ├── Parameters.py                  # Parameter configurations  
+   │   ├── deep_models.py             # Defines MLP-based architectures for neural representations  
+   │   ├── forward.py                 # Implements the forward ptychographic propagation model  
+   │   ├── simulate_data_process.py  # Tools for simulating ptychographic measurements  
+   │   ├── training_models.py        # Training loop and optimization utilities
+   │   ├── tiny-cuda-nn/             # Our probe neural network backbone, modified to use float precision  
+   ├── main.py                        # Main script for training and evaluation  
+   ├── parameters.py                  # Parameter configurations  
    ├── config_hash.json               # JSON config file for probe neural networks  
-   ├── interactive_rec_real_data.ipynb        # Notebook for experimental data reconstructions  
-   ├── interactive_rec_simulated_data.ipynb   # Notebook for simulated data reconstructions  
-   ├── Metrics4Simulated_object.ipynb         # Object metrics  
-   ├── Metrics4Simulated_probe.ipynb          # Probe metrics  
    ├── requirements.txt               # Python dependencies  
    └── README.md                      
 
