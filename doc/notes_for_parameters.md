@@ -1,6 +1,6 @@
 # Hyperparameter Tuning Guide for PtyINR
 
-This guide outlines key hyperparameters used in `Parameters.py` and provides recommended adjustment ranges and tuning strategies.
+This guide outlines key hyperparameters used in `parameters.py` and provides recommended adjustment ranges and tuning strategies.
 
 ---
 
@@ -32,8 +32,8 @@ This guide outlines key hyperparameters used in `Parameters.py` and provides rec
 | **regularized_loss_weight** | `0 – 1` | Regularizes probe shape to be focused at early training stages.<br>– Use non-zero value for circular probes<br>– Set to `0` for rectangular probes (e.g. in MLLS systems) |
 | **regularized_steps** | `0 – 200` | Number of steps applying probe amplitude regularization.<br>– The total regularization effect is:<br>**`regularized_loss_weight × regularized_steps`**<br>– Increase either if the probe diverges<br>– Consider decreasing this value if the probe retains a concentrated shape—such as a single bright pixel—even after the number of training steps exceeds the regularized step count, indicating that the amplitude may have been over-regularized.|
 
-> **Tip:** When unsure, start with default values in `Parameters.py` and adjust one parameter at a time. Use visual feedback from the probe/object reconstructions to guide tuning.
+> **Tip:** When unsure, start with default values in `parameters.py` and adjust one parameter at a time. Use visual feedback from the probe/object reconstructions to guide tuning.
 
 ---
 
-For more information, refer to the code in `Parameters.py`.
+For more information, refer to the code in `parameters.py`.

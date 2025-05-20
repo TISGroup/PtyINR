@@ -36,7 +36,7 @@ Your input should be in an `.h5` file format containing the following datasets:
 | **`z_m`**      | Distance from the sample to the detector (in meters) |
 
 > Ensure that the data is collected (or simulated) in **transmission mode** of X-ray.  
-> For simulated data generation, refer to: `utils/Simulate_Data_Process.py`
+> For simulated data generation, refer to: `utils/data_simulation_and_evaluation.py`
 
 ---
 
@@ -46,20 +46,20 @@ PtyINR supports two workflows:
 
 #### a. Jupyter Notebooks (Recommended for Exploration & Visualization)
 
-- Configure parameters in `Parameters.py`
+- Configure parameters in `parameters.py`
 - **`interactive_rec_simulated_data.ipynb`** — For simulated experiments  
 - **`interactive_rec_real_data.ipynb`** — For real experimental data
 
 #### b. Python Script (Recommended for Batch or Headless Runs)
 
-- Configure parameters in `Parameters.py`
+- Configure parameters in `parameters.py`
 - Run the script from the terminal:
 
 ```bash
 python Main.py
 ```
 
-> For guidance on how to tune PtyINR's hyperparameters (e.g., learning rates, loss weights), refer to: **`Notes for tuning hyperparameters.txt`**
+> For guidance on how to tune PtyINR's hyperparameters (e.g., learning rates, loss weights), refer to: **`notes_for_parameters.md`**
 
 ---
 
@@ -70,7 +70,7 @@ python Main.py
    PtyINR/  
    ├── data/                          # Input datasets  
    ├── doc/                           # Documentations on PtyINR  
-   │   ├── notes_for_tuning_hyperparameters.md    # Guidance on how to tune the hyperparameters in PtyINR  
+   │   ├── notes_for_parameters.md    # Guidance on how to tune the hyperparameters in PtyINR  
    ├── utils/                         # Utility functions  
    │   ├── deep_models.py             # Defines MLP-based architectures for object neural representations  
    │   ├── forward.py                 # Implements the forward ptychographic propagation model  
