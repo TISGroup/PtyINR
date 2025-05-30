@@ -56,7 +56,7 @@ PtyINR supports two workflows:
 - Run the script from the terminal:
 
 ```bash
-python Main.py
+python main.py
 ```
 
 > For guidance on how to tune PtyINR's hyperparameters (e.g., learning rates, loss weights), refer to: **`notes_for_parameters.md`**
