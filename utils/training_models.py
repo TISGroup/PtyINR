@@ -294,9 +294,7 @@ def train_Pty_INR_SGD(f,parameters,probe):
 
 
 
-def train_Pty_INR_GD(f,parameters,probe):
-    with open("config_hash.json") as l:
-        config = json.load(l)           
+def train_Pty_INR_GD(f,parameters,probe):           
     ratio=parameters["regularized_loss_weight"]
     regularized_steps=parameters["regularized_steps"]
     show_every=parameters["show_every"]  
