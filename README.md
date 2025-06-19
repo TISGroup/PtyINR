@@ -1,7 +1,7 @@
 # PtyINR: Ptychographic Implicit Neural Representation
 
 **PtyINR** is a deep learning framework for joint reconstruction of complex-valued **objects** and **illumination probes** in X-ray ptychography. It leverages **implicit neural representations** and **physics-informed optimization** to enable high-quality reconstructions under challenging conditions such as **limited scan overlap** and **short exposure time**. This repository provides the main scripts, utilities, and interactive notebooks to run PtyINR on both **simulated** and **real experimental datasets**.
-
+<img src="doc/illustrate.jpg" width="100%"/>
 ---
 
 ## Installation
