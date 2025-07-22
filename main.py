@@ -13,20 +13,20 @@ mode=parameters["mode"]
 parameters["image_show"]=False 
 if mode=="simulated":
     overlap_ratio= parameters["overlap_ratio"]
-    crystal=np.load(parameters["simulate_data_source"])[303:,303:]   #241*241
+    tungsten=np.load(parameters["simulate_data_source"])[303:,303:]   #241*241
     probe=np.load(parameters["path_to_probe"])
     probe=probe[10:74,10:74]             #64*64
     probe=torch.tensor(probe)
     step_size=round((1-parameters["overlap_ratio"])*probe.shape[0])
-    pad_number=step_size-(crystal.shape[0]-probe.shape[0])%step_size
+    pad_number=step_size-(tungsten.shape[0]-probe.shape[0])%step_size
     
     if pad_number!=step_size:
         pad=nn.ZeroPad2d((0, pad_number, 0, pad_number))
-        case_obj=torch.tensor(crystal)
+        case_obj=torch.tensor(tungsten)
         case_obj=pad(case_obj)
         case_obj=case_obj.numpy()
     else:
-        case_obj=crystal
+        case_obj=tungsten
         
     if ((case_obj.shape[0]-probe.shape[0])/step_size+1)%2!=0:
         case_obj=torch.tensor(case_obj)
