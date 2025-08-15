@@ -31,7 +31,7 @@ Your input should be in an `.h5` file format containing the following datasets:
 
 | Header         | Description |
 |----------------|-------------|
-| **`diff_amp`** | 3D array of diffraction amplitudes, **without FFT shift**, with shape: `(N, H, W)`<br>— `N`: number of diffraction patterns<br>— `H`, `W`: height and width of each pattern |
+| **`diffamp`** | 3D array of diffraction amplitudes, **without FFT shift**, with shape: `(N, H, W)`<br>— `N`: number of diffraction patterns<br>— `H`, `W`: height and width of each pattern |
 | **`points`**   | 2D array of scan positions with shape: `(2, N)`<br>— First row: x-coordinates<br>— Second row: y-coordinates<br>— Units: micrometers (µm) |
 | **`lambda_nm`**| Wavelength of the incoming X-ray (in nanometers) |
 | **`ccd_pixel_um`** | Pixel size of the detector (in micrometers) |
@@ -73,12 +73,12 @@ python main.py
    ├── data/                          # Input datasets  
    ├── doc/                           # Documentations on PtyINR  
    │   ├── notes_for_parameters.md    # Guidance on how to tune the hyperparameters in PtyINR  
-   ├── utils/                         # Utility functions  
-   │   ├── deep_models.py             # Defines MLP-based architectures for object neural representations  
+   ├── PtyINR/                         # Utility functions  
+   │   ├── siren.py             # Defines MLP-based architectures for object neural representations  
    │   ├── forward.py                 # Implements the forward ptychographic propagation model  
    │   ├── data_simulation_and_evaluation.py   # Tools for simulating ptychographic measurements and result evaluation
-   │   ├── training_models.py        # Training loop and optimization utilities  
-   │   ├── tiny-cuda-nn/             # Our probe neural network backbone, modified to use float precision  
+   │   ├── train.py        # Training loop and optimization utilities  
+   │   ├── tiny-cuda-nn/             # Our probe neural network backbone, modified to use float precision
    ├── main.py                        # Main script for training  
    ├── parameters.py                  # Parameter configurations  
    ├── requirements.txt               # Python dependencies  

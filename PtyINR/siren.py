@@ -1,8 +1,6 @@
 import scipy
 from numpy import zeros, newaxis
 # !pip install pytorch-msssim
-from pytorch_msssim import ms_ssim, ssim 
-from torchmetrics.image import PeakSignalNoiseRatio
 import random
 import os
 import numpy as np
@@ -11,15 +9,9 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
+import os
 
-from PIL import Image
-from torchvision.transforms import Resize, Compose, ToTensor, Normalize, Grayscale, Pad
 import numpy as np
-import skimage
-import matplotlib.pyplot as plt
-
-import time
-
     
 class SineLayer(nn.Module):
     # See paper sec. 3.2, final paragraph, and supplement Sec. 1.5 for discussion of omega_0.

@@ -10,3 +10,4 @@ torchsummary
 commentjson
 torchmetrics
 gdown
+tensorboard

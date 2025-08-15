@@ -23,10 +23,11 @@ from torch.utils.data import DataLoader, Dataset
 import os
 from torchvision import transforms
 import h5py
-from utils.forward import *
+from PtyINR.forward import *
 import io
 import time
 from math import log10, sqrt
+from PtyINR.tools import*
 
 def get_step_size(overlap_ratio,probe_size):
     move_ratio=1-overlap_ratio
@@ -43,27 +44,32 @@ def diffraction_pattern_generate(amplitude_gt,phase_gt,overlap_ratio,probe,param
     torch.backends.cudnn.benchmark = False
     np.random.seed(random_seed)
 
+    device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
     step_size=get_step_size(overlap_ratio,probe.shape[0])
     print("step size: ",step_size)
     
     actual_object = torch.complex(amplitude_gt*torch.cos(phase_gt),amplitude_gt*torch.sin(phase_gt))
-    actual_object=actual_object.to(parameters["device"])
-    probe=probe.to(parameters["device"])
+    actual_object=actual_object.to(device)
+    probe=probe.to(device)
     resolution = parameters["resolution"]
     scanpts=int((amplitude_gt.shape[0]-probe.shape[0])/step_size+1)
     detection_size = int(probe.shape[0])
     actual_amp=torch.tensor(np.zeros((scanpts*scanpts,detection_size,detection_size)))
     points = torch.tensor(np.zeros((2,scanpts*scanpts)))
     
+    pre_fft,post_fft=get_pre_post_fft()
+    pre_fft=pre_fft.to(device)
+    post_fft=post_fft.to(device)
+    
     for i in range(scanpts):  # vertical 
         for j in range(scanpts):  # horizontal
             actual_amp[i*scanpts+j]=forward(actual_object[j*step_size:j*step_size+probe.shape[0]
-                                                          ,i*step_size:i*step_size+probe.shape[1]],probe)
+                                                          ,i*step_size:i*step_size+probe.shape[1]],probe,pre_fft,post_fft)
             st = step_size*resolution[-1]*1e6*(scanpts-1)/2
             points[0][i*scanpts+j] = -st+step_size*resolution[-2]*1e6*j# x j  um
             points[1][i*scanpts+j] = -st+step_size*resolution[-1]*1e6*i# y i
     
-    if parameters["device"]=="cuda":
+    if device != "cpu":
         actual_amp=actual_amp.detach().cpu().numpy()
     else:
         actual_amp=actual_amp.numpy()
@@ -91,8 +97,7 @@ def diffraction_pattern_generate(amplitude_gt,phase_gt,overlap_ratio,probe,param
     
     
     print("the diffraction pattern shape is ",actual_amp.shape)
-    buffer = io.BytesIO()
-    with h5py.File(buffer,'w') as f1:
+    with h5py.File("data/generated_diffraction_pattern.h5",'w') as f1:
         angle = f1.create_dataset("angle", data=parameters["angle"])
         ccd_pixel_um = f1.create_dataset("ccd_pixel_um", data=parameters["ccd_pixel_um"])
         diffamp = f1.create_dataset("diffamp", data=actual_amp)
@@ -101,10 +106,8 @@ def diffraction_pattern_generate(amplitude_gt,phase_gt,overlap_ratio,probe,param
         z_m = f1.create_dataset("z_m", data=parameters["z_m"])
         
         f1.close()
-    buffer.seek(0)
-    f = h5py.File(buffer, 'r')
     
-    return f
+    # return _
 
 
 def find_global_phase_shift_loop(A, B, num_steps=100000):

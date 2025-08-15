@@ -25,7 +25,7 @@ import os
 import time
 
 from parameters import *
-
+from PtyINR.tools import*
 
 def _confine(A):
     """\
@@ -109,42 +109,43 @@ def grids(sh, psize=None, center='geometric', FFTlike=True):
         psize = np.asarray(psize).reshape((len(sh),) + len(sh) * (1,))
         return grid * psize
     
-
-sh=parameters["sh"]
-resolution=parameters["resolution"]
-c_sam=parameters["c_sam"]
-psize=parameters["psize"]
-c_det=parameters["c_det"]
-lz=parameters["lz"]
-device=parameters["device"]
+def get_pre_post_fft():
+    sh=parameters["sh"]
+    resolution=parameters["resolution"]
+    c_sam=parameters["c_sam"]
+    psize=parameters["psize"]
+    c_det=parameters["c_det"]
+    lz=parameters["lz"]
+    #device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
+        
+    [X, Y] = grids(sh, resolution, c_sam)
+    [V, W] = grids(sh, psize, c_det)
     
-[X, Y] = grids(sh, resolution, c_sam)
-[V, W] = grids(sh, psize, c_det)
-
-pre_curve = np.exp(
-    1j * np.pi * (X**2 + Y**2) / lz)
-
-pre_fft = pre_curve * np.exp(
-    -2.0 * np.pi * 1j * ((X-X[0, 0]) * V[0, 0] +
-                         (Y-Y[0, 0]) * W[0, 0]) / lz
-)
-
-
-post_curve = np.exp(
-    1j * np.pi * (V**2 + W**2) / lz)
-
-
-post_fft = post_curve * np.exp(
-    -2.0 * np.pi * 1j * (X[0, 0]*V + Y[0, 0]*W) / lz
-)
-
-pre_fft=torch.tensor(pre_fft).to(device)
-post_fft=torch.tensor(post_fft).to(device)
+    pre_curve = np.exp(
+        1j * np.pi * (X**2 + Y**2) / lz)
+    
+    pre_fft = pre_curve * np.exp(
+        -2.0 * np.pi * 1j * ((X-X[0, 0]) * V[0, 0] +
+                             (Y-Y[0, 0]) * W[0, 0]) / lz
+    )
+    
+    
+    post_curve = np.exp(
+        1j * np.pi * (V**2 + W**2) / lz)
+    
+    
+    post_fft = post_curve * np.exp(
+        -2.0 * np.pi * 1j * (X[0, 0]*V + Y[0, 0]*W) / lz
+    )
+    
+    pre_fft=torch.tensor(pre_fft)#.to(device)
+    post_fft=torch.tensor(post_fft)#.to(device)
+    return pre_fft,post_fft
 
 
 
 
-def forward(object_p,probe):
+def forward(object_p,probe,pre_fft,post_fft):
     exit_wave2=torch.mul(object_p,probe)
     w = post_fft * 1/parameters["shape_size"] * torch.fft.fft2(pre_fft * exit_wave2)
     return torch.abs(w)
