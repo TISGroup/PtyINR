@@ -72,8 +72,8 @@ python main.py
    PtyINR/  
    ├── data/                          # Input datasets
    ├── demo/
-   │   ├── interactive_rec_real_data.ipynb    # Notebook for reconstruct real data(user data)
-   │   ├── interactive_rec_simulated_data.ipynb  # Notebook for reconstruct simulated data
+   │   ├── interactive_rec_real_data.ipynb    # Notebook for reconstructing real data(user data)
+   │   ├── interactive_rec_simulated_data.ipynb  # Notebook for reconstructing simulated data
    ├── doc/                           # Documentations on PtyINR  
    │   ├── notes_for_parameters.md    # Guidance on how to tune the hyperparameters in PtyINR  
    ├── PtyINR/                         # Utility functions  
