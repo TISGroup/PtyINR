@@ -12,10 +12,11 @@ parameters["mode"]="simulated"                                              # ch
 ##########################################################   Define experiment type (simulated or your own data)    #########################################
 
 ### for simulated experiment settings
-parameters["overlap_ratio"]=0.95                                            # choose between 0.95 0.5 0.3
+parameters["overlap_ratio"]=0.95     # choose between 0.95 0.5 0.3, for simplicity of calculation, we used illumination overlap ratio (1-step_size/probe_array_size) here, corresponding to 40%, -540%, -800% actual probe overlap ratios (1-step_size/probe_size)
 parameters["probe_known"]=False                                             # if False, PtyINR will also estimate the probe
-parameters["path_to_probe"]="/home/tyli/github/PtyINR-main-use/result/4668_PtyINR_v4_probe.npy"                        # predefine known probes if available
+parameters["path_to_probe"]="data/probe_for_sim.npy"                        # predefine known probes if available
 parameters["simulate_data_source"]="data/tungsten_sample.npy"                       # only for simulation, the ground truth object
+parameters["noise_tag"] = "clean"                               #choose between clean, gaussian, poisson, combined
 f={}                                                                        # for getting the physical parameters for simulation
 f["lambda_nm"]=np.float64(0.1239797467401991)                     # the wavelength of the incoming wave(nm)
 f['z_m']=np.float64(0.5)                                          # the distance from the detector to the sample(meters)
@@ -23,33 +24,32 @@ f['ccd_pixel_um']=np.float64(55.0)                                # the pixel si
 f['angle']=np.float64(-9.992007221626409*1e-15)                   # the angle of the incoming wave to the sample(rad)
 
 ### real data source file
-parameters["real_data_source"]="/home/tyli/github/PtyINR-main-use/data/generated_diffraction_pattern.h5"     # current we only support h5 file as standard input with headers "lambda_nm", "z_m", "ccd_pixel_um", "diffamp", "points"
+parameters["real_data_source"]="data/generated_diffraction_pattern.h5"     # current we only support h5 file as standard input with headers "lambda_nm", "z_m", "ccd_pixel_um", "diffamp", "points"
 
 ### result save directory
-parameters["save_path"] = "result/"
+parameters["save_path"] = "result/"            # please set a folder to save the reconstruction results, preferably a leaf folder of current address 
 
 ##########################################################   Model training parameters    #########################################
 
 ### those are defined as default, you may change based on your own data
-parameters["diffraction_scale"]=1200    # the diffraction pattern will be divided by this value, this is to ensure the loss is not too large for optimization as LR is usually below 1
+parameters["diffraction_scale"]=600    # the diffraction pattern will be divided by this value, this is to ensure the loss is not too large for optimization as LR is usually below 1
 parameters["first_omega"]=30            # control the the extent of recovered details, raise this value if the data is sufficient and decrease if data is limited
 parameters["loss"]="SmoothL1"                 # use SmoothL1 by default. choose between "MSE" "SmoothL1" "L1"
-parameters["beta_for_smoothl1"]=1e-3        # control the extent the loss is more like MSE or L1, raise this value if you want to have better details but higher value will become more unstable
-parameters["LR"]=6e-5            # for object amplitude       
-parameters["LR2"]=6e-5         # for object phase 
-parameters["LR3"]=5e-5           # for probe amplitude
-parameters["LR4"]=5e-5         # for probe phase
-parameters["regularized_loss_weight"]=1e-1        # to regularize the probe function at the begining of training, adjust it higher if the reconstructed probe diverged
+parameters["beta_for_smoothl1"]=1e-2        # control the extent the loss is more like MSE or L1, raise this value if you want to have better details but higher value will become more unstable
+parameters["LR"]=2e-5            # for object amplitude       
+parameters["LR2"]=2e-5         # for object phase 
+parameters["LR3"]=1e-5           # for probe amplitude
+parameters["LR4"]=1e-5         # for probe phase
+parameters["regularized_loss_weight"]=1e-2        # to regularize the probe function at the begining of training, adjust it higher if the reconstructed probe diverged
 parameters["regularized_steps"]=50                # to control the training steps to regularize the probe, adjust it higher if the reconstructed probe diverged
-parameters["show_every"]=50                       # the image will be showed every this step
-parameters["image_show"]=False                     # whether to display the current training images
+parameters["show_every"]=100                       # the image will be showed every this step
+parameters["image_show"]=False                     # whether to display the intermediate training images
 parameters["model_type"]="siren"                  # define the object neural network type, default is SIREN
 parameters["tag"]="NA"         # the name to be saved for reconstructions
 
 ### for Pty_INR training strategy
-parameters["train_method"]="mini_batch"       # Select mini_batch for standard batch-wise optimization, or full_batch to perform optimization over the entire dataset (gradient accumulation)
 parameters["batches"]=3600                       # batch size 
-parameters["total_steps"] = 3000   # total training steps
+parameters["total_steps"] = 6000   # total training steps
 parameters["CUDA_VISIBLE_DEVICES"]="0"            # choose specific GPU(s) for training
 
 ##########################################################   Do not modify from here, below are for setting physical parameters    #########################################

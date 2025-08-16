@@ -1,4 +1,6 @@
 from parameters import *
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = str(parameters["CUDA_VISIBLE_DEVICES"])
 from PtyINR.train import *
 import matplotlib.pyplot as plt
 from PtyINR.data_simulation_and_evaluation import*
@@ -10,21 +12,27 @@ def _prepare_simulated_data(params):
     probe = np.load(params["path_to_probe"])[10:74, 10:74]          # 64x64
 
     # Compute scan step size from overlap
-    step_size = round((1 - params["overlap_ratio"]) * probe.shape[0])
-
-    # Pad case_obj on right and bottom so scan grid divides evenly
-    # First pad so (obj - probe) % step == 0
-    rem = (crystal.shape[0] - probe.shape[0]) % step_size
-    pad_number = (step_size - rem) if rem != 0 else 0
-    if pad_number > 0:
-        case_obj = np.pad(crystal, ((0, pad_number), (0, pad_number)), mode="constant")
+    step_size=round((1-parameters["overlap_ratio"])*probe.shape[0])
+    
+    pad_number=step_size-(241-probe.shape[0])%step_size
+    
+    if pad_number!=step_size:
+        pad=nn.ZeroPad2d((0, pad_number, 0, pad_number))
+        case_obj=torch.tensor(crystal)
+        case_obj=pad(case_obj)
+        case_obj=case_obj.numpy()
     else:
-        case_obj = crystal
-
-    # Ensure number of scan positions per axis is even
-    n_steps = (case_obj.shape[0] - probe.shape[0]) / step_size + 1
-    if int(n_steps) % 2 != 0:
-        case_obj = np.pad(case_obj, ((0, step_size), (0, step_size)), mode="constant")
+        case_obj=crystal
+        
+    if ((case_obj.shape[0]-probe.shape[0])/step_size+1)%2!=0:
+        case_obj=torch.tensor(case_obj)
+        pad=nn.ZeroPad2d((0, step_size, 0, step_size))
+        case_obj=pad(case_obj)
+        case_obj=case_obj.numpy()
+    
+    print("test object shape: ",case_obj.shape)
+    print("overlap ratio: ",parameters["overlap_ratio"])
+    parameters["obj_size"]=case_obj.shape[0]
 
     print("test object shape: ", case_obj.shape)
     print("overlap ratio: ", params["overlap_ratio"])
@@ -35,9 +43,9 @@ def _prepare_simulated_data(params):
 
     # Generate diffraction patterns (writes to files/buffers as implemented in your project)
 
-    amp = torch.tensor(np.abs(case_obj), dtype=torch.float32)
-    phs = torch.tensor(np.angle(case_obj), dtype=torch.float32)
-    prb = torch.tensor(probe, dtype=torch.float32)
+    amp = torch.tensor(np.abs(case_obj))
+    phs = torch.tensor(np.angle(case_obj))
+    prb = torch.tensor(probe)
 
     _ = diffraction_pattern_generate(
         amplitude_gt=amp,
@@ -45,13 +53,14 @@ def _prepare_simulated_data(params):
         overlap_ratio=params["overlap_ratio"],
         probe=prb,
         parameters=params,
+        noise = parameters["noise_tag"]
     )
 
 
 def main():
     # Respect GPU selection before importing torch
-    if "CUDA_VISIBLE_DEVICES" in parameters:
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(parameters["CUDA_VISIBLE_DEVICES"])
+    # if "CUDA_VISIBLE_DEVICES" in parameters:
+    #     os.environ["CUDA_VISIBLE_DEVICES"] = str(parameters["CUDA_VISIBLE_DEVICES"])
 
     # Defer heavy imports until after environment is set
 
