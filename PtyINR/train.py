@@ -200,7 +200,6 @@ def train_Pty_INR_SGD(rank, world_size, parameters):
     total_steps = parameters["total_steps"]
     regularized_steps = parameters["regularized_steps"]
     ratio = parameters["regularized_loss_weight"]
-    imshow= parameters["image_show"]
     pre_fft,post_fft=get_pre_post_fft()
     pre_fft=pre_fft.to(device)
     post_fft=post_fft.to(device)

@@ -12,7 +12,7 @@ def _prepare_simulated_data(params):
     probe = np.load(params["path_to_probe"])[10:74, 10:74]          # 64x64
 
     # Compute scan step size from overlap
-    step_size=round((1-parameters["overlap_ratio"])*probe.shape[0])
+    step_size=round((1-params["overlap_ratio"])*probe.shape[0])
     
     pad_number=step_size-(241-probe.shape[0])%step_size
     
@@ -31,15 +31,8 @@ def _prepare_simulated_data(params):
         case_obj=case_obj.numpy()
     
     print("test object shape: ",case_obj.shape)
-    print("overlap ratio: ",parameters["overlap_ratio"])
-    parameters["obj_size"]=case_obj.shape[0]
-
-    print("test object shape: ", case_obj.shape)
-    print("overlap ratio: ", params["overlap_ratio"])
-    print("step size: ", step_size)
-
-    # Update parameters
-    params["obj_size"] = int(case_obj.shape[0])
+    print("overlap ratio: ",params["overlap_ratio"])
+    params["obj_size"]=case_obj.shape[0]
 
     # Generate diffraction patterns (writes to files/buffers as implemented in your project)
 
@@ -53,7 +46,7 @@ def _prepare_simulated_data(params):
         overlap_ratio=params["overlap_ratio"],
         probe=prb,
         parameters=params,
-        noise = parameters["noise_tag"]
+        noise = params["noise_tag"]
     )
 
 

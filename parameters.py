@@ -42,8 +42,7 @@ parameters["LR3"]=1e-5           # for probe amplitude
 parameters["LR4"]=1e-5         # for probe phase
 parameters["regularized_loss_weight"]=1e-2        # to regularize the probe function at the begining of training, adjust it higher if the reconstructed probe diverged
 parameters["regularized_steps"]=50                # to control the training steps to regularize the probe, adjust it higher if the reconstructed probe diverged
-parameters["show_every"]=100                       # the image will be showed every this step
-parameters["image_show"]=False                     # whether to display the intermediate training images
+parameters["show_every"]=100                       # the reconstruction image will be showed every this step in tensor board
 parameters["model_type"]="siren"                  # define the object neural network type, default is SIREN
 parameters["tag"]="NA"         # the name to be saved for reconstructions
 
