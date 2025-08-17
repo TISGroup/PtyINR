@@ -9,7 +9,7 @@ def _prepare_simulated_data(params):
 
     # Load crystal (complex) and probe, crop to target sizes
     crystal = np.load(params["simulate_data_source"])[303:, 303:]  # 241x241
-    probe = np.load(params["path_to_probe"])[10:74, 10:74]          # 64x64
+    probe = np.load(params["path_to_probe"])[24:-24,24:-24]          # 64x64
 
     # Compute scan step size from overlap
     step_size=round((1-params["overlap_ratio"])*probe.shape[0])
