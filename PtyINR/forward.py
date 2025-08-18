@@ -8,7 +8,7 @@ import torch
 from torch import nn
 import numpy as np
 import skimage
-from PIL import Image,ImageChops
+from PIL import Image, ImageChops
 from torchvision.transforms import Resize, Compose, ToTensor, Normalize, Grayscale, Pad
 import matplotlib.pyplot as plt
 from skimage import data
@@ -25,12 +25,11 @@ import os
 import time
 
 from parameters import *
-from PtyINR.tools import*
+from PtyINR.tools import *
+
 
 def _confine(A):
-    """\
-    Doc TODO.
-    """
+    # Wrap coordinates to centered FFT-like range [-N/2, N/2) per axis
     sh = np.asarray(A.shape)[1:]
     A = A.astype(float)
     m = np.reshape(sh, (len(sh),) + len(sh) * (1,))
@@ -38,9 +37,7 @@ def _confine(A):
 
 
 def _translate_to_pix(sh, center):
-    """\
-    Take arbitrary input and translate it to a pixel position with respect to sh.
-    """
+    # Convert center specifier to pixel coordinates
     sh = np.array(sh)
     if not isinstance(center, str):
         cen = np.asarray(center) % sh
@@ -57,40 +54,7 @@ def _translate_to_pix(sh, center):
 
 
 def grids(sh, psize=None, center='geometric', FFTlike=True):
-    """\
-    ``q0,q1,... = grids(sh)``
-    returns centered coordinates for a N-dimensional array of shape sh (pixel units)
-
-    ``q0,q1,... = grids(sh,psize)``
-    gives the coordinates scaled according to the given pixel size psize.
-
-    ``q0,q1,... = grids(sh,center='fftshift')``
-    gives the coordinates shifted according to fftshift convention for the origin
-
-    ``q0,q1,... = grids(sh,psize,center=(c0,c1,c2,...))``
-    gives the coordinates according scaled with psize having the origin at (c0,c1,..)
-
-
-    Parameters
-    ----------
-    sh : tuple of int
-        The shape of the N-dimensional array
-
-    psize : float or tuple of float
-        Pixel size in each dimensions
-
-    center : tupel of int
-        Tuple of pixel, or use ``center='fftshift'`` for fftshift-like grid
-        and ``center='geometric'`` for the matrix center as grid origin
-
-    FFTlike : bool
-        If False, grids ar not bound by the interval [-sh//2:sh//2[
-
-    Returns
-    -------
-    ndarray
-        The coordinate grids
-    """
+    # Generate coordinate grids with optional physical pixel sizes and centering
     sh = np.asarray(sh)
 
     cen = _translate_to_pix(sh, center)
@@ -98,7 +62,7 @@ def grids(sh, psize=None, center='geometric', FFTlike=True):
     grid = np.indices(sh).astype(float) - np.reshape(cen, (len(sh),) + len(sh) * (1,))
 
     if FFTlike:
-        grid = _confine(grid)
+        grid = _confine(grid)  # wrap to FFT convention
 
     if psize is None:
         return grid
@@ -107,45 +71,44 @@ def grids(sh, psize=None, center='geometric', FFTlike=True):
         if psize.size == 1:
             psize = psize * np.ones((len(sh),))
         psize = np.asarray(psize).reshape((len(sh),) + len(sh) * (1,))
-        return grid * psize
-    
+        return grid * psize  # scale by physical pixel size
+
+
 def get_pre_post_fft():
-    sh=parameters["sh"]
-    resolution=parameters["resolution"]
-    c_sam=parameters["c_sam"]
-    psize=parameters["psize"]
-    c_det=parameters["c_det"]
-    lz=parameters["lz"]
-    #device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
-        
-    [X, Y] = grids(sh, resolution, c_sam)
-    [V, W] = grids(sh, psize, c_det)
-    
+    # Precompute quadratic phase factors for far-field propagation (pre/post FFT multipliers)
+    sh = parameters["sh"]
+    resolution = parameters["resolution"]
+    c_sam = parameters["c_sam"]
+    psize = parameters["psize"]
+    c_det = parameters["c_det"]
+    lz = parameters["lz"]
+
+    [X, Y] = grids(sh, resolution, c_sam)  # sample-plane coordinates
+    [V, W] = grids(sh, psize, c_det)  # detector-plane coordinates
+
     pre_curve = np.exp(
-        1j * np.pi * (X**2 + Y**2) / lz)
-    
+        1j * np.pi * (X ** 2 + Y ** 2) / lz)  # quadratic phase at sample
+
     pre_fft = pre_curve * np.exp(
-        -2.0 * np.pi * 1j * ((X-X[0, 0]) * V[0, 0] +
-                             (Y-Y[0, 0]) * W[0, 0]) / lz
-    )
-    
-    
+        -2.0 * np.pi * 1j * ((X - X[0, 0]) * V[0, 0] +
+                             (Y - Y[0, 0]) * W[0, 0]) / lz
+    )  # shift term to align sampling between planes
+
     post_curve = np.exp(
-        1j * np.pi * (V**2 + W**2) / lz)
-    
-    
+        1j * np.pi * (V ** 2 + W ** 2) / lz)  # quadratic phase at detector
+
     post_fft = post_curve * np.exp(
-        -2.0 * np.pi * 1j * (X[0, 0]*V + Y[0, 0]*W) / lz
-    )
-    
-    pre_fft=torch.tensor(pre_fft)#.to(device)
-    post_fft=torch.tensor(post_fft)#.to(device)
-    return pre_fft,post_fft
+        -2.0 * np.pi * 1j * (X[0, 0] * V + Y[0, 0] * W) / lz
+    )  # position-dependent phase
+
+    pre_fft = torch.tensor(pre_fft)
+    post_fft = torch.tensor(post_fft)
+    return pre_fft, post_fft
 
 
-
-
-def forward(object_p,probe,pre_fft,post_fft):
-    exit_wave2=torch.mul(object_p,probe)
-    w = post_fft * 1/parameters["shape_size"] * torch.fft.fft2(pre_fft * exit_wave2)
-    return torch.abs(w)
+def forward(object_p, probe, pre_fft, post_fft):
+    # Single-view forward model: exit wave -> far-field propagation -> diffraction amplitude
+    exit_wave2 = torch.mul(object_p, probe)  # exit wave at sample
+    w = post_fft * 1 / parameters["shape_size"] * torch.fft.fft2(
+        pre_fft * exit_wave2)  # scaled FFT with pre/post factors
+    return torch.abs(w)  # return amplitude at detector

@@ -21,7 +21,7 @@
 3. **Install the tiny-cuda-nn**:
 
    ```bash
-   cd utils/tiny-cuda-nn/bindings/torch
+   cd PtyINR/tiny-cuda-nn/bindings/torch
    pip install .
 
 ## Usage
