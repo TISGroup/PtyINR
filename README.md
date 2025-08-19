@@ -39,7 +39,7 @@ Your input should be in an `.h5` file format containing the following datasets:
 | **`z_m`**      | Distance from the sample to the detector (in meters) |
 
 > Ensure that the data is collected (or simulated) in **transmission mode** of X-ray.  
-> For simulated data generation, refer to: `utils/data_simulation_and_evaluation.py`
+> For simulated data generation, refer to: `PtyINR/data_simulation_and_evaluation.py`
 
 ---
 
