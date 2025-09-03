@@ -57,16 +57,8 @@ if parameters["mode"]=="simulated":
 else:
     parameters["amp_shift"]=True
 
-probe=np.load(parameters["path_to_probe"])
-amp1=np.rot90(np.abs(probe),k=2)
-phase1=np.rot90(-np.angle(probe),k=2)
-probe=amp1*np.exp(1j*phase1)
-probe=torch.tensor(probe)
-if parameters["mode"]=="simulated":   # extract the middle 64*64
-    total_size = probe.shape[0]
-    idx=int((total_size-64)/2)
-    probe=probe[idx:-idx,idx:-idx]
-else:
+
+if parameters["mode"]!="simulated":   # extract the middle 64*64
     f=h5py.File(parameters["real_data_source"], 'r')
 
 
