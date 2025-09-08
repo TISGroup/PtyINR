@@ -89,6 +89,18 @@ python main.py
    └── README.md                      
 
 ```
+
+## Citation
+If you find our work useful in your research, please cite:
+```
+@article{li2025ptyinr,
+author = {Li, Tingyou and Xu, Zixin and Gao, Zirui and Yan, Hanfei and Huang, Xiaojing and Li, Jizhou},
+title = {Learning neural representations for X-ray ptychography reconstruction with unknown probes},
+booktitle = {arXiv},
+year={2025}
+}
+```
+
 ## Acknowledgements
 
 We gratefully acknowledge the contributions of the following open-source projects, which have significantly inspired and supported the development of this work:
