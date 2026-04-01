@@ -169,7 +169,7 @@ def train_Pty_INR_SGD(rank, world_size, parameters):
     probe_grid = grid_return([actual_amp.shape[1], actual_amp.shape[1]]).to(device)
     probe_shape = actual_amp.shape[1]
     if parameters["probe_known"] == True:
-        probe = np.load("path_to_probe")
+        probe = np.load(parameters["path_to_probe"])
         probe = torch.tensor(probe).to(device)
 
     ### --- Optimizers ---
